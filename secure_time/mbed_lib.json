@@ -1,0 +1,15 @@
+{
+    "name": "secure_time",
+    "config": {
+        "enabled": {
+            "macro_name": "SECURE_TIME_ENABLED",
+            "value": true,
+            "help": "Enabled"
+        }
+    },
+    "target_overrides": {
+        "NUCLEO_F410RB": {
+            "enabled": false
+        }
+    }
+}
