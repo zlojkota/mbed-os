@@ -27,18 +27,18 @@ void server_main1(void *ptr)
     uint32_t signals = 0;
     memset(msg_buff, 0, sizeof(msg_buff));
     while (true) {
-        signals = psa_wait_any(PSA_WAIT_BLOCK);
+        signals = psa_wait_any(PSA_BLOCK);
         if (signals & NEG_CLIENT_PART1_ROT_SRV1_MSK) {
             psa_msg_t msg = {0};
             psa_get(NEG_CLIENT_PART1_ROT_SRV1_MSK, &msg);
             switch (msg.type) {
-                case PSA_IPC_MSG_TYPE_CONNECT:
-                case PSA_IPC_MSG_TYPE_DISCONNECT:
+                case PSA_IPC_CONNECT:
+                case PSA_IPC_DISCONNECT:
                     break;
-                case PSA_IPC_MSG_TYPE_CALL: {
+                case PSA_IPC_CALL: {
                     memset(msg_buff, 0, msg_buff_SIZE);
                     uint32_t bytes_read = 0;
-                    for (size_t i = 0; i < PSA_MAX_INVEC_LEN; i++) {
+                    for (size_t i = 0; i < PSA_MAX_IOVEC; i++) {
                         bytes_read = psa_read(msg.handle, i, msg_buff + bytes_read, msg.in_size[i]);
                     }
 
@@ -47,9 +47,9 @@ void server_main1(void *ptr)
                     }
                     break;
                 }
-                default: {
-                    SPM_ASSERT(false);
-                }
+                default:
+                    SPM_PANIC("Unknown message type");
+                    break;
             }
 
             psa_end(msg.handle, PSA_SUCCESS);

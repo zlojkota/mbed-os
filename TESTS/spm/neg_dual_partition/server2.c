@@ -31,27 +31,27 @@ void server_main2(void *ptr)
     psa_msg_t msg       = {0};
 
     while (1) {
-        signals = psa_wait_any(PSA_WAIT_BLOCK);
+        signals = psa_wait_any(PSA_BLOCK);
         if (signals & DUMMY_MSK) {
             psa_get(DUMMY_MSK, &msg);
             switch (msg.type) {
-                case PSA_IPC_MSG_TYPE_CALL:
-                case PSA_IPC_MSG_TYPE_CONNECT:
-                case PSA_IPC_MSG_TYPE_DISCONNECT:
+                case PSA_IPC_CALL:
+                case PSA_IPC_CONNECT:
+                case PSA_IPC_DISCONNECT:
                     psa_end(msg.handle, PSA_SUCCESS);
                     break;
                 default:
-                SPM_PANIC("Invalid msg type");
+                    SPM_PANIC("Invalid msg type");
             }
         }
         else if (signals & PART2_CALL_INSIDE_PARTITION_MSK) {
             psa_get(PART2_CALL_INSIDE_PARTITION_MSK, &msg);
             switch (msg.type) {
-                case PSA_IPC_MSG_TYPE_CONNECT: {
+                case PSA_IPC_CONNECT: {
                     psa_end(msg.handle, PSA_SUCCESS);
                     break;
                 }
-                case PSA_IPC_MSG_TYPE_CALL: {
+                case PSA_IPC_CALL: {
                     psa_connect(DUMMY, MINOR_VER);
                     TEST_FAIL_MESSAGE("server_call_sid_in_same_partition negative test failed");
                     break;
@@ -61,7 +61,7 @@ void server_main2(void *ptr)
                 }
             }
         } else {
-            SPM_ASSERT(0);
+            SPM_PANIC("Unknown signal (0x%08x)", signals);
         }
     }
 }

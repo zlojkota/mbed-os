@@ -42,14 +42,14 @@ void part1_main(void *ptr)
 
     init_num_of_tests();
     while (1) {
-        signals = psa_wait_any(PSA_WAIT_BLOCK);
+        signals = psa_wait_any(PSA_BLOCK);
         if (0 == (signals & CONTROL_MSK)) {
             SPM_PANIC("returned from psa_wait_any without CONTROL_ROT_SRV bit on signals=(0x%08x)\n", signals);
         }
 
         psa_get(CONTROL_MSK, &msg);
         switch (msg.type) {
-        case PSA_IPC_MSG_TYPE_CALL:
+        case PSA_IPC_CALL:
             if (msg.in_size[0] == 0) {
                 SPM_PANIC("got a zero message size to CONTROL ROT_SRV\n");
             }
@@ -58,7 +58,7 @@ void part1_main(void *ptr)
                 SPM_PANIC("could not read the entire test payload structure\n");
             }
 
-            switch(action) {
+            switch (action) {
                 case START_TEST:
                     if ((test_idx >= num_of_tests) || (test_list[test_idx] == NULL)) {
                         SPM_PANIC("Invalid test ID was sent!\n");
@@ -77,8 +77,8 @@ void part1_main(void *ptr)
             }
 
             break;
-        case PSA_IPC_MSG_TYPE_CONNECT:
-        case PSA_IPC_MSG_TYPE_DISCONNECT:
+        case PSA_IPC_CONNECT:
+        case PSA_IPC_DISCONNECT:
             psa_end(msg.handle, PSA_SUCCESS);
             break;
         default:

@@ -15,9 +15,9 @@
 #include "cmsis_os2.h"
 #include "psa_defs.h"
 #include "spm_internal.h"
+#include "spm_panic.h"
 
-
-// These implementations are meant to be used only for SPM level 0.
+#if SPM_LEVEL == 0
 
 bool is_buffer_accessible(const void *ptr, size_t size, spm_partition_t * accessing_partition)
 {
@@ -40,3 +40,31 @@ void nspe_done(osSemaphoreId_t completion_sem_id)
     SPM_ASSERT(osOK == os_status);
     PSA_UNUSED(os_status);
 }
+
+void memory_protection_init(const mem_region_t *regions, uint32_t region_count)
+{
+    PSA_UNUSED(regions);
+    PSA_UNUSED(region_count);
+}
+
+#endif // SPM_LEVEL == 0
+
+#if (SPM_LEVEL == 0) || (SPM_LEVEL == 1)
+
+extern spm_db_t g_spm;
+
+spm_partition_t *get_active_partition(void)
+{
+    osThreadId_t active_thread_id = osThreadGetId();
+    SPM_ASSERT(NULL != active_thread_id);
+
+    for (uint32_t i = 0; i < g_spm.partition_count; ++i) {
+        if (g_spm.partitions[i].thread_id == active_thread_id) {
+            return &(g_spm.partitions[i]);
+        }
+    }
+
+    return NULL; // Valid in case of NSPE
+}
+
+#endif // (SPM_LEVEL == 0) || (SPM_LEVEL == 1)

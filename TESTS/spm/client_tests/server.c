@@ -23,26 +23,26 @@ uint8_t data[MSG_BUF_SIZE] = {0};
 void server_main(void *ptr)
 {
     uint32_t signals = 0;
+    psa_msg_t msg = {0};
     while (1) {
-        signals = psa_wait_any(PSA_WAIT_BLOCK);
+        signals = psa_wait_any(PSA_BLOCK);
         if (signals & PART1_ROT_SRV1_MSK) {
-            psa_msg_t msg = {0};
             psa_get(PART1_ROT_SRV1_MSK, &msg);
             switch (msg.type) {
-                case PSA_IPC_MSG_TYPE_CONNECT:
-                case PSA_IPC_MSG_TYPE_DISCONNECT:
+                case PSA_IPC_CONNECT:
+                case PSA_IPC_DISCONNECT:
                     break;
-                case PSA_IPC_MSG_TYPE_CALL: {
+                case PSA_IPC_CALL: {
                     memset(data, 0, sizeof(data));
                     if (msg.in_size[0] + msg.in_size[1] + msg.in_size[2] > 1) {
-                        size_t offset = psa_read(msg.handle, 0, (void*)data, msg.in_size[0]);
-                        offset += psa_read(msg.handle, 1, (void*)(data + offset), msg.in_size[1]);
-                        psa_read(msg.handle, 2, (void*)(data + offset), msg.in_size[2]);
+                        size_t offset = psa_read(msg.handle, 0, (void *)data, msg.in_size[0]);
+                        offset += psa_read(msg.handle, 1, (void *)(data + offset), msg.in_size[1]);
+                        psa_read(msg.handle, 2, (void *)(data + offset), msg.in_size[2]);
                     }
                     if (msg.out_size[0] > 0) {
                         uint8_t resp_size = data[0];
                         uint8_t resp_offset = data[1];
-                        psa_write(msg.handle, 0, (const void*)(data + resp_offset), resp_size);
+                        psa_write(msg.handle, 0, (const void *)(data + resp_offset), resp_size);
                     }
                     break;
                 }
@@ -51,8 +51,22 @@ void server_main(void *ptr)
                 }
             }
             psa_end(msg.handle, PSA_SUCCESS);
+        } else if (signals & DROP_CONN_MSK) {
+            psa_get(DROP_CONN_MSK, &msg);
+            switch (msg.type) {
+                case PSA_IPC_CONNECT:
+                case PSA_IPC_DISCONNECT:
+                    psa_end(msg.handle, PSA_SUCCESS);
+                    break;
+                case PSA_IPC_CALL:
+                    psa_end(msg.handle, PSA_DROP_CONNECTION);
+                    break;
+                default:
+                    SPM_PANIC("Invalid msg type");
+            }
+        } else {
+            SPM_PANIC("Received invalid signal %d", signals);
         }
     }
-
-    return;
 }
+

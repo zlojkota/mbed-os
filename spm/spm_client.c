@@ -92,21 +92,25 @@ static void spm_rot_service_queue_enqueue(spm_rot_service_t *rot_service, spm_ip
 
     rot_service->queue.tail = item;
 
-    int32_t flags = (int32_t)osThreadFlagsSet(rot_service->partition->thread_id, rot_service->mask);
-    SPM_ASSERT(flags >= 0);
+    uint32_t flags = osThreadFlagsSet(rot_service->partition->thread_id, rot_service->mask);
+    // osThreadFlagsSet() sets the msb on failure.
+    // flags is not allowed to be 0 since only dequeue operation can clear the flags,
+    // and both operations (enqueue and dequeue) are mutex protected.
+    SPM_ASSERT((flags & SPM_CMSIS_RTOS_ERROR_BIT_MSK) == 0);
+    SPM_ASSERT(flags & rot_service->mask);
     PSA_UNUSED(flags);
 
     os_status = osMutexRelease(rot_service->partition->mutex);
     SPM_ASSERT(osOK == os_status);
 }
 
-void psa_connect_async(spm_pending_connect_msg_t *msg)
+void psa_connect_async(uint32_t sid, spm_pending_connect_msg_t *msg)
 {
     SPM_ASSERT(msg != NULL);
 
-    spm_rot_service_t *dst_rot_service = rot_service_get(msg->sid);
+    spm_rot_service_t *dst_rot_service = rot_service_get(sid);
     if (NULL == dst_rot_service) {
-        SPM_PANIC("SID 0x%x is invalid!\n", msg->sid);
+        SPM_PANIC("SID 0x%x is invalid!\n", sid);
     }
 
     if (((dst_rot_service->min_version_policy == PSA_MINOR_VERSION_POLICY_RELAXED) && (msg->min_version > dst_rot_service->min_version)) ||
@@ -119,9 +123,9 @@ void psa_connect_async(spm_pending_connect_msg_t *msg)
     spm_validate_connection_allowed(dst_rot_service, origin_partition);
 
     // Allocating from SPM-Core internal memory
-    spm_ipc_channel_t *channel = (spm_ipc_channel_t *)osMemoryPoolAlloc(g_spm.channel_mem_pool, PSA_WAIT_POLL);
+    spm_ipc_channel_t *channel = (spm_ipc_channel_t *)osMemoryPoolAlloc(g_spm.channel_mem_pool, PSA_POLL);
     if (NULL == channel) {
-        msg->rc = PSA_CONNECTION_REFUSED_BUSY;
+        msg->rc = PSA_CONNECTION_REFUSED;
         if (origin_partition != NULL) {
             osStatus_t os_status = osSemaphoreRelease(msg->completion_sem_id);
             SPM_ASSERT(osOK == os_status);
@@ -137,13 +141,14 @@ void psa_connect_async(spm_pending_connect_msg_t *msg)
     msg->rc = (psa_error_t)create_channel_handle(channel, dst_rot_service->partition->partition_id);
 
     // NOTE: all struct fields must be initialized as the allocated memory is not zeroed.
-    channel->state = CHANNEL_STATE_CONNECTING;
+    channel->state = SPM_CHANNEL_STATE_CONNECTING;
     channel->src_partition = origin_partition;
     channel->dst_rot_service = dst_rot_service;
     channel->msg_ptr = msg;
-    channel->msg_type = PSA_IPC_MSG_TYPE_CONNECT;
+    channel->msg_type = PSA_IPC_CONNECT;
     channel->rhandle = NULL;
     channel->next = NULL;
+    channel->is_dropped = FALSE;
 
     spm_rot_service_queue_enqueue(dst_rot_service, channel);
 }
@@ -159,7 +164,6 @@ psa_handle_t psa_connect(uint32_t sid, uint32_t minor_version)
     };
 
     spm_pending_connect_msg_t msg = {
-        .sid = sid,
         .min_version = minor_version,
         .rc = PSA_NULL_HANDLE,
         .completion_sem_id = osSemaphoreNew(
@@ -172,7 +176,7 @@ psa_handle_t psa_connect(uint32_t sid, uint32_t minor_version)
         SPM_PANIC("could not create a semaphore for connect message");
     }
 
-    psa_connect_async(&msg);
+    psa_connect_async(sid, &msg);
 
     osStatus_t os_status = osSemaphoreAcquire(msg.completion_sem_id, osWaitForever);
     SPM_ASSERT(osOK == os_status);
@@ -185,43 +189,33 @@ psa_handle_t psa_connect(uint32_t sid, uint32_t minor_version)
     return (psa_handle_t)msg.rc;
 }
 
-
-void psa_call_async(spm_pending_call_msg_t *msg)
+void psa_call_async(psa_handle_t handle, spm_pending_call_msg_t *msg)
 {
     SPM_ASSERT(msg != NULL);
+    spm_ipc_channel_t *channel = get_channel_from_handle(handle);
 
-    spm_ipc_channel_t *channel = get_channel_from_handle(msg->channel);
+    if (channel->is_dropped == TRUE) {
+        msg->rc = PSA_DROP_CONNECTION;
 
-    if (msg->in_vec_size != 0) {
-        if (msg->in_vec_size > PSA_MAX_INVEC_LEN) {
-            SPM_PANIC("in_len (%d) is bigger than allowed (%d)\n", msg->in_vec_size, PSA_MAX_INVEC_LEN);
+        if (channel->src_partition == NULL) {
+            nspe_done(msg->completion_sem_id);
+        } else {
+            osStatus_t os_status = osSemaphoreRelease(msg->completion_sem_id);
+            SPM_ASSERT(osOK == os_status);
+            PSA_UNUSED(os_status);
         }
 
-        if (msg->in_vec == NULL) {
-            SPM_PANIC("in_vec NULL but len is not 0 (%d) \n", msg->in_vec_size);
-        }
+        return;
     }
 
-    if (msg->out_vec_size != 0) {
-        if (msg->out_vec_size > PSA_MAX_OUTVEC_LEN) {
-            SPM_PANIC("out_len (%d) is bigger than allowed (%d)\n", msg->out_vec_size, PSA_MAX_OUTVEC_LEN);
-        }
+    channel_state_switch(&channel->state,
+        SPM_CHANNEL_STATE_IDLE, SPM_CHANNEL_STATE_PENDING);
 
-        if (msg->out_vec == NULL) {
-            SPM_PANIC("out_vec NULL but len is not 0 (%d) \n", msg->out_vec_size);
-        }
-    }
-
-    SPM_ASSERT(PSA_IPC_MSG_TYPE_INVALID == channel->msg_type);
-    CHANNEL_STATE_ASSERT(channel->state, CHANNEL_STATE_IDLE);
-
-    spm_rot_service_t *dst_rot_service = channel->dst_rot_service;
-
-    channel->state = CHANNEL_STATE_PENDING;
     channel->msg_ptr = msg;
-    channel->msg_type = PSA_IPC_MSG_TYPE_CALL;
+    channel->msg_type = PSA_IPC_CALL;
 
-    spm_rot_service_queue_enqueue(dst_rot_service, channel);
+    validate_iovec(msg->in_vec, msg->in_vec_size, msg->out_vec, msg->out_vec_size);
+    spm_rot_service_queue_enqueue(channel->dst_rot_service, channel);
 }
 
 psa_error_t psa_call(
@@ -241,7 +235,6 @@ psa_error_t psa_call(
     };
 
     spm_pending_call_msg_t msg = {
-        .channel = handle,
         .in_vec = in_vec,
         .in_vec_size = in_len,
         .out_vec = out_vec,
@@ -257,7 +250,7 @@ psa_error_t psa_call(
         SPM_PANIC("could not create a semaphore for connect message");
     }
 
-    psa_call_async(&msg);
+    psa_call_async(handle, &msg);
 
     osStatus_t os_status = osSemaphoreAcquire(msg.completion_sem_id, osWaitForever);
     SPM_ASSERT(osOK == os_status);
@@ -278,11 +271,29 @@ void psa_close(psa_handle_t handle)
     }
 
     spm_ipc_channel_t *channel = get_channel_from_handle(handle);
-    CHANNEL_STATE_ASSERT(channel->state, CHANNEL_STATE_IDLE);
-    channel->msg_type = PSA_IPC_MSG_TYPE_DISCONNECT;
-    channel->state = CHANNEL_STATE_INVALID;
+    channel_state_switch(&channel->state,
+        SPM_CHANNEL_STATE_IDLE, SPM_CHANNEL_STATE_INVALID);
+
+    channel->msg_type = PSA_IPC_DISCONNECT;
     // Forward the handle as we return instantly.
     channel->msg_ptr = (void *)handle;
 
     spm_rot_service_queue_enqueue(channel->dst_rot_service, channel);
+}
+
+uint32_t psa_framework_version(void)
+{
+    return (uint32_t)PSA_FRAMEWORK_VERSION;
+}
+
+
+uint32_t psa_version(uint32_t sid)
+{
+    uint32_t version = PSA_VERSION_NONE;
+    spm_rot_service_t *service = rot_service_get(sid);
+    if (service != NULL) {
+        version = service->min_version;
+    }
+
+    return version;
 }
