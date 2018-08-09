@@ -21,6 +21,7 @@
 #include "PlatformMutex.h"
 #include "lfs.h"
 
+namespace mbed {
 
 /**
  * LittleFileSystem, a little filesystem
@@ -277,5 +278,6 @@ private:
     PlatformMutex _mutex;
 };
 
+} // namespace mbed
 
 #endif
