@@ -40,13 +40,13 @@ MBED_WEAK FileSystem * get_default_filesystem()
 {
 #if COMPONENT_SPIF
 
-    static LittleFileSystem default_fs("defult_fs", get_default_blockdevice());
+    static LittleFileSystem default_fs("default_fs", get_default_blockdevice());
 
     return &default_fs;
 
 #elif COMPONENT_SD
 
-    static FATFileSystem default_fs("defult_fs", get_default_blockdevice());
+    static FATFileSystem default_fs("default_fs", get_default_blockdevice());
 
     return &default_fs;
 

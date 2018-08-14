@@ -17,7 +17,7 @@
 #ifndef FILE_H
 #define FILE_H
 
-#include "filesystem/FileSystem.h"
+#include "filesystems/FileSystem.h"
 #include "platform/FileHandle.h"
 
 namespace mbed {

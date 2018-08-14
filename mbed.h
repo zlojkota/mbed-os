@@ -32,7 +32,7 @@
 #endif
 
 #if MBED_CONF_FILESYSTEM_PRESENT
-#include "filesystem/mbed_filesystem.h"
+#include "filesystems/mbed_filesystem.h"
 #endif
 
 #include "platform/mbed_toolchain.h"

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "filesystem/mbed_filesystem.h"
+#include "filesystems/mbed_filesystem.h"
 #include "LittleFileSystem.h"
 #include "errno.h"
 #include "lfs.h"
