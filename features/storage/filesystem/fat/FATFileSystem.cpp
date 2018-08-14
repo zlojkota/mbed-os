@@ -23,7 +23,7 @@
 #include "ffconf.h"
 #include "platform/mbed_debug.h"
 #include "platform/mbed_critical.h"
-#include "filesystems/mbed_filesystem.h"
+#include "filesystem/mbed_filesystem.h"
 #include "FATFileSystem.h"
 
 #include <errno.h>

@@ -17,7 +17,7 @@
 #ifndef DIR_H
 #define DIR_H
 
-#include "filesystems/FileSystem.h"
+#include "filesystem/FileSystem.h"
 #include "platform/DirHandle.h"
 
 namespace mbed {

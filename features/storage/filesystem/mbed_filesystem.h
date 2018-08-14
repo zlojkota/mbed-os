@@ -23,9 +23,9 @@
 #include "platform/platform.h"
 
 // FileSystem classes
-#include "filesystems/FileSystem.h"
-#include "filesystems/File.h"
-#include "filesystems/Dir.h"
+#include "filesystem/FileSystem.h"
+#include "filesystem/File.h"
+#include "filesystem/Dir.h"
 
 // BlockDevice classes
 #include "BlockDevice.h"
