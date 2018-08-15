@@ -1,13 +1,15 @@
 #include "mbed.h"
 #include "greentea-client/test_env.h"
 #include "unity.h"
-#include "FlashIAP.h"
 #include "utest.h"
 
-#include "FlashIAPBlockDevice.h"
+#include "DataFlashBlockDevice.h"
 #include <stdlib.h>
 
 using namespace utest::v1;
+
+#define TEST_PINS PTB22, PTB23, PTB21, PTB20
+#define TEST_FREQ 40000000
 
 #define TEST_BLOCK_COUNT 10
 #define TEST_ERROR_MASK 16
@@ -22,41 +24,20 @@ const struct {
     {"total size",   &BlockDevice::size},
 };
 
-// Align a value to a specified size.
-// Parameters :
-// val           - [IN]   Value.
-// size          - [IN]   Size.
-// Return        : Aligned value.
-static inline uint32_t align_up(uint32_t val, uint32_t size)
-{
-    return (((val - 1) / size) + 1) * size;
-}
 
-void test_read_write()
-{
+void test_read_write() {
+    DataFlashBlockDevice bd(TEST_PINS, TEST_FREQ);
 
-    FlashIAP flash;
-    int err = flash.init();
+    int err = bd.init();
     TEST_ASSERT_EQUAL(0, err);
 
-    uint32_t code_end_address = FLASHIAP_ROM_END - flash.get_flash_start();
-    bd_addr_t code_end_offset = align_up(code_end_address, flash.get_sector_size(code_end_address));
-
-    err = flash.deinit();
-    TEST_ASSERT_EQUAL(0, err);
-
-    FlashIAPBlockDevice bd;
-
-    err = bd.init();
-    TEST_ASSERT_EQUAL(0, err);
-
-    for (unsigned a = 0; a < sizeof(ATTRS) / sizeof(ATTRS[0]); a++) {
+    for (unsigned a = 0; a < sizeof(ATTRS)/sizeof(ATTRS[0]); a++) {
         static const char *prefixes[] = {"", "k", "M", "G"};
         for (int i = 3; i >= 0; i--) {
             bd_size_t size = (bd.*ATTRS[a].method)();
-            if (size >= (1ULL << 10 * i)) {
+            if (size >= (1ULL << 10*i)) {
                 printf("%s: %llu%sbytes (%llubytes)\n",
-                       ATTRS[a].name, size >> 10 * i, prefixes[i], size);
+                    ATTRS[a].name, size >> 10*i, prefixes[i], size);
                 break;
             }
         }
@@ -66,12 +47,11 @@ void test_read_write()
     uint8_t *write_block = new uint8_t[block_size];
     uint8_t *read_block = new uint8_t[block_size];
     uint8_t *error_mask = new uint8_t[TEST_ERROR_MASK];
-    unsigned addrwidth = ceil(log(float(bd.size() - 1)) / log(float(16))) + 1;
+    unsigned addrwidth = ceil(log(float(bd.size()-1)) / log(float(16)))+1;
 
     for (int b = 0; b < TEST_BLOCK_COUNT; b++) {
         // Find a random block
-
-        bd_addr_t block = (rand() * block_size) % (bd.size() - code_end_offset) + code_end_offset;
+        bd_addr_t block = (rand()*block_size) % bd.size();
 
         // Use next random number as temporary seed to keep
         // the address progressing in the pseudorandom sequence
@@ -109,13 +89,13 @@ void test_read_write()
 
         // Find error mask for debugging
         memset(error_mask, 0, TEST_ERROR_MASK);
-        bd_size_t error_scale = block_size / (TEST_ERROR_MASK * 8);
+        bd_size_t error_scale = block_size / (TEST_ERROR_MASK*8);
 
         srand(seed);
-        for (bd_size_t i = 0; i < TEST_ERROR_MASK * 8; i++) {
+        for (bd_size_t i = 0; i < TEST_ERROR_MASK*8; i++) {
             for (bd_size_t j = 0; j < error_scale; j++) {
-                if ((0xff & rand()) != read_block[i * error_scale + j]) {
-                    error_mask[i / 8] |= 1 << (i % 8);
+                if ((0xff & rand()) != read_block[i*error_scale + j]) {
+                    error_mask[i/8] |= 1 << (i%8);
                 }
             }
         }
@@ -139,8 +119,7 @@ void test_read_write()
 
 
 // Test setup
-utest::v1::status_t test_setup(const size_t number_of_cases)
-{
+utest::v1::status_t test_setup(const size_t number_of_cases) {
     GREENTEA_SETUP(30, "default_auto");
     return verbose_test_setup_handler(number_of_cases);
 }
@@ -151,7 +130,6 @@ Case cases[] = {
 
 Specification specification(test_setup, cases);
 
-int main()
-{
+int main() {
     return !Harness::run(specification);
 }
