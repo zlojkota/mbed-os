@@ -19,7 +19,6 @@
 #include <mbed.h>
 #include "BlockDevice.h"
 
- 
 /** BlockDevice for SPI based flash devices
  *  such as the MX25R or SST26F016B
  *
