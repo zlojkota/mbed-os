@@ -57,11 +57,12 @@ SPIFBlockDevice::SPIFBlockDevice(
 
 int SPIFBlockDevice::init()
 {
-    if (!_is_initialized) {
-        _init_ref_count = 0;
-    }
-
     uint32_t val = core_util_atomic_incr_u32(&_init_ref_count, 1);
+    int err = BD_ERROR_OK;
+    uint8_t header[16];
+    uint8_t table[8];
+    uint32_t table_addr;
+    uint32_t density;
 
     if (val != 1) {
         return BD_ERROR_OK;
@@ -82,61 +83,70 @@ int SPIFBlockDevice::init()
     }
 
     // Check that device is doing ok 
-    int err = _sync();
+    err = _sync();
     if (err) {
-        return BD_ERROR_DEVICE_ERROR;
+        err = BD_ERROR_DEVICE_ERROR;
+        goto end;
     }
 
     // Check JEDEC serial flash discoverable parameters for device
     // specific info
-    uint8_t header[16];
     _cmdread(SPIF_SFDP, 4, 16, 0x0, header);
 
     // Verify SFDP signature for sanity
     // Also check that major/minor version is acceptable
     if (!(memcmp(&header[0], "SFDP", 4) == 0 && header[5] == 1)) {
-        return BD_ERROR_DEVICE_ERROR;
+        err = BD_ERROR_DEVICE_ERROR;
+        goto end;
     }
 
     // The SFDP spec indicates the standard table is always at offset 0
     // in the parameter headers, we check just to be safe
     if (!(header[8] == 0 && header[10] == 1)) {
-        return BD_ERROR_DEVICE_ERROR;
+        err = BD_ERROR_DEVICE_ERROR;
+        goto end;
     }
 
     // Parameter table pointer, spi commands are BE, SFDP is LE,
     // also sfdp command expects extra read wait byte
-    uint32_t table_addr = (
+    table_addr = (
         (header[14] << 24) |
         (header[13] << 16) |
         (header[12] << 8 ));
-    uint8_t table[8];
     _cmdread(SPIF_SFDP, 4, 8, table_addr, table);
 
     // Check erase size, currently only supports 4kbytes
     // TODO support erase size != 4kbytes?
     // TODO support other erase opcodes from the sector descriptions
     if ((table[0] & 0x3) != 0x1 || table[1] != SPIF_SE) {
-        return BD_ERROR_DEVICE_ERROR;
+        err = BD_ERROR_DEVICE_ERROR;
+        goto end;
     }
 
     // Check address size, currently only supports 3byte addresses
     // TODO support address > 3bytes?
     // TODO check for devices larger than 2Gbits?
     if ((table[2] & 0x4) != 0 || (table[7] & 0x80) != 0) {
-        return BD_ERROR_DEVICE_ERROR;
+        err = BD_ERROR_DEVICE_ERROR;
+        goto end;
     }
 
     // Get device density, stored as size in bits - 1
-    uint32_t density = (
+    density = (
         (table[7] << 24) |
         (table[6] << 16) |
         (table[5] << 8 ) |
         (table[4] << 0 ));
     _size = (density/8) + 1;
 
-    _is_initialized = true;
-    return 0;
+end:
+    if (err == BD_ERROR_OK) {
+        _is_initialized = true;
+    } else {
+        _is_initialized = false;
+        _init_ref_count = 0;
+    }
+    return err;
 }
 
 int SPIFBlockDevice::deinit()
