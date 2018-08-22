@@ -226,4 +226,11 @@ public:
 /** @}*/
 } // namespace mbed
 
+// Added "using" for backwards compatibility
+#ifndef MBED_NO_GLOBAL_USING_DIRECTIVE
+using mbed::BlockDevice;
+using mbed::bd_addr_t;
+using mbed::bd_size_t;
+#endif
+
 #endif

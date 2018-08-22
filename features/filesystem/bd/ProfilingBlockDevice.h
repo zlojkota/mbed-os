@@ -184,6 +184,11 @@ private:
     bd_size_t _erase_count;
 };
 
+// Added "using" for backwards compatibility
+#ifndef MBED_NO_GLOBAL_USING_DIRECTIVE
+using mbed::ProfilingBlockDevice;
+#endif
+
 /** @}*/
 } // namespace mbed
 

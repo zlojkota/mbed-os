@@ -28,8 +28,6 @@ namespace mbed {
 /** \addtogroup filesystem */
 /** @{*/
 
-
-
 /** Lazily allocated heap-backed block device
  *
  * Useful for simulating a block device and tests
@@ -159,5 +157,10 @@ private:
 
 /** @}*/
 } // namespace mbed
+
+// Added "using" for backwards compatibility
+#ifndef MBED_NO_GLOBAL_USING_DIRECTIVE
+using mbed::HeapBlockDevice;
+#endif
 
 #endif

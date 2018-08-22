@@ -28,7 +28,6 @@ namespace mbed {
 /** \addtogroup filesystem */
 /** @{*/
 
-
 /** Block device for mapping to a slice of another block device
  *
  *  @code
@@ -169,6 +168,11 @@ protected:
     bool _stop_from_end;
     bd_size_t _stop;
 };
+
+// Added "using" for backwards compatibility
+#ifndef MBED_NO_GLOBAL_USING_DIRECTIVE
+using mbed::SlicingBlockDevice;
+#endif
 
 /** @}*/
 } // namespace mbed

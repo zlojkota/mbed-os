@@ -136,6 +136,11 @@ private:
     BlockDevice *_bd;
 };
 
+// Added "using" for backwards compatibility
+#ifndef MBED_NO_GLOBAL_USING_DIRECTIVE
+using mbed::ReadOnlyBlockDevice;
+#endif
+
 /** @}*/
 } // namespace mbed
 
