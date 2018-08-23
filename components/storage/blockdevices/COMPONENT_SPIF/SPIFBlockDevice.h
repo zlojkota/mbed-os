@@ -26,30 +26,30 @@
  *  // Here's an example using the MX25R SPI flash device on the K82F
  *  #include "mbed.h"
  *  #include "SPIFBlockDevice.h"
- *  
+ *
  *  // Create flash device on SPI bus with PTE5 as chip select
  *  SPIFBlockDevice spif(PTE2, PTE4, PTE1, PTE5);
- *  
+ *
  *  int main() {
  *      printf("spif test\n");
- *  
+ *
  *      // Initialize the SPI flash device and print the memory layout
  *      spif.init();
  *      printf("spif size: %llu\n",         spif.size());
  *      printf("spif read size: %llu\n",    spif.get_read_size());
  *      printf("spif program size: %llu\n", spif.get_program_size());
  *      printf("spif erase size: %llu\n",   spif.get_erase_size());
- *  
+ *
  *      // Write "Hello World!" to the first block
  *      char *buffer = (char*)malloc(spif.get_erase_size());
  *      sprintf(buffer, "Hello World!\n");
  *      spif.erase(0, spif.get_erase_size());
  *      spif.program(buffer, 0, spif.get_erase_size());
- *  
+ *
  *      // Read back what was stored
  *      spif.read(buffer, 0, spif.get_erase_size());
  *      printf("%s", buffer);
- *  
+ *
  *      // Deinitialize the device
  *      spif.deinit();
  *  }
@@ -65,7 +65,7 @@ public:
      *  @param csel     SPI chip select pin
      *  @param freq     Clock speed of the SPI bus (defaults to 40MHz)
      */
-    SPIFBlockDevice(PinName mosi, PinName miso, PinName sclk, PinName csel, int freq=40000000);
+    SPIFBlockDevice(PinName mosi, PinName miso, PinName sclk, PinName csel, int freq = 40000000);
 
     /** Initialize a block device
      *
@@ -153,7 +153,7 @@ public:
      *  @return         Size of the underlying device in bytes
      */
     virtual bd_size_t size() const;
-    
+
 private:
     // Master side hardware
     SPI _spi;
@@ -169,9 +169,9 @@ private:
     int _wren();
     int _sync();
     void _cmdread(uint8_t op, uint32_t addrc, uint32_t retc,
-            uint32_t addr, uint8_t *rets);
+                  uint32_t addr, uint8_t *rets);
     void _cmdwrite(uint8_t op, uint32_t addrc, uint32_t argc,
-            uint32_t addr, const uint8_t *args);
+                   uint32_t addr, const uint8_t *args);
 };
 
 
