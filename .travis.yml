@@ -192,7 +192,7 @@ matrix:
         # Install dependencies
         - sudo apt-get install gcc-arm-embedded fuse libfuse-dev
         - pip install -r requirements.txt
-        - git clone https://github.com/armmbed/spiflash-driver.git
+        #- git clone https://github.com/armmbed/spiflash-driver.git
         # Print versions
         - arm-none-eabi-gcc --version
         - gcc --version
