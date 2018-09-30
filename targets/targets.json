@@ -243,7 +243,7 @@
         "extra_labels": ["NXP", "LPC176X", "MBED_LPC1768", "NXP_EMAC"],
         "supported_toolchains": ["ARM", "uARM", "GCC_ARM", "GCC_CR", "IAR"],
         "detect_code": ["1010"],
-        "device_has": ["RTC", "USTICKER", "ANALOGIN", "ANALOGOUT", "CAN", "DEBUG_AWARENESS", "EMAC", "ETHERNET", "I2C", "I2CSLAVE", "INTERRUPTIN", "LOCALFILESYSTEM", "PORTIN", "PORTINOUT", "PORTOUT", "PWMOUT", "SEMIHOST", "SERIAL", "SERIAL_FC", "SLEEP", "SPI", "SPISLAVE", "STDIO_MESSAGES", "FLASH"],
+        "device_has": ["USTICKER", "ANALOGIN", "ANALOGOUT", "CAN", "DEBUG_AWARENESS", "EMAC", "ETHERNET", "I2C", "I2CSLAVE", "INTERRUPTIN", "LOCALFILESYSTEM", "PORTIN", "PORTINOUT", "PORTOUT", "PWMOUT", "SEMIHOST", "SERIAL", "SERIAL_FC", "SLEEP", "SPI", "SPISLAVE", "STDIO_MESSAGES", "FLASH"],
         "release_versions": ["2", "5"],
         "device_name": "LPC1768",
         "bootloader_supported": true,
@@ -1941,6 +1941,28 @@
         "release_versions": ["2"],
         "device_name": "STM32F334C8"
     },
+    "BLAZARLED_F407VG": {
+        "inherits": ["FAMILY_STM32"],
+        "core": "Cortex-M4F",
+        "extra_labels_add": ["STM32F4", "STM32F407", "STM32F407xG", "STM32F407VG"],
+        "supported_toolchains": ["ARM", "uARM", "GCC_ARM", "IAR"],
+        "config": {
+            "hse_value": {
+               "value": "8000000",
+               "macro_name": "HSE_VALUE"
+             },
+            "clock_source": {
+                "help": "Mask value : USE_PLL_HSE_EXTC (need HW patch) | USE_PLL_HSE_XTAL | USE_PLL_HSI",
+                "value": "USE_PLL_HSE_XTAL",
+                "macro_name": "CLOCK_SOURCE"
+            }
+        },
+        "macros_add": ["USB_STM_HAL"],
+        "overrides": {"lse_available": 0},
+        "device_has_add": ["ANALOGOUT"],
+        "release_versions": ["2", "5"],
+        "device_name": "STM32F407VG"
+    },
     "DISCO_F407VG": {
         "inherits": ["FAMILY_STM32"],
         "core": "Cortex-M4F",
@@ -3443,7 +3465,7 @@
     },
     "EFR32MG1_BRD4150": {
         "inherits": ["EFR32MG1P132F256GM48"],
-        "device_has": ["802_15_4_PHY", "ANALOGIN", "CRC", "I2C", "I2CSLAVE", "I2C_ASYNCH", "INTERRUPTIN", "LPTICKER", "PORTIN", "PORTINOUT", "PORTOUT", "PWMOUT", "RTC", "SERIAL", "SERIAL_ASYNCH", "SLEEP", "SPI", "SPISLAVE", "SPI_ASYNCH", "STDIO_MESSAGES", "USTICKER", "FLASH"],
+        "device_has": ["ANALOGIN", "CRC", "I2C", "I2CSLAVE", "I2C_ASYNCH", "INTERRUPTIN", "LPTICKER", "PORTIN", "PORTINOUT", "PORTOUT", "PWMOUT", "RTC", "SERIAL", "SERIAL_ASYNCH", "SLEEP", "SPI", "SPISLAVE", "SPI_ASYNCH", "STDIO_MESSAGES", "USTICKER", "FLASH"],
         "forced_reset_timeout": 2,
         "config": {
             "hf_clock_src": {
@@ -3482,14 +3504,11 @@
                 "macro_name": "EFM_BC_EN"
             }
         },
-        "overrides": {
-            "network-default-interface-type": "MESH"
-        },
         "public": false
     },
     "TB_SENSE_1": {
         "inherits": ["EFR32MG1P233F256GM48"],
-        "device_has": ["802_15_4_PHY", "ANALOGIN", "CRC", "I2C", "I2CSLAVE", "I2C_ASYNCH", "INTERRUPTIN", "LPTICKER", "PORTIN", "PORTINOUT", "PORTOUT", "PWMOUT", "RTC", "SERIAL", "SERIAL_ASYNCH", "SLEEP", "SPI", "SPISLAVE", "SPI_ASYNCH", "STDIO_MESSAGES", "USTICKER", "FLASH"],
+        "device_has": ["ANALOGIN", "CRC", "I2C", "I2CSLAVE", "I2C_ASYNCH", "INTERRUPTIN", "LPTICKER", "PORTIN", "PORTINOUT", "PORTOUT", "PWMOUT", "RTC", "SERIAL", "SERIAL_ASYNCH", "SLEEP", "SPI", "SPISLAVE", "SPI_ASYNCH", "STDIO_MESSAGES", "USTICKER", "FLASH"],
         "forced_reset_timeout": 5,
         "config": {
             "hf_clock_src": {
@@ -3522,9 +3541,6 @@
                 "value": "cmuHFRCOFreq_32M0Hz",
                 "macro_name": "HFRCO_FREQUENCY_ENUM"
             }
-        },
-        "overrides": {
-            "network-default-interface-type": "MESH"
         }
     },
     "EFM32PG12B500F1024GL125": {
@@ -3594,7 +3610,7 @@
     "TB_SENSE_12": {
         "inherits": ["EFR32MG12P332F1024GL125"],
         "device_name": "EFR32MG12P332F1024GL125",
-        "device_has": ["802_15_4_PHY", "ANALOGIN", "CRC", "I2C", "I2CSLAVE", "I2C_ASYNCH", "INTERRUPTIN", "LPTICKER", "PORTIN", "PORTINOUT", "PORTOUT", "PWMOUT", "RTC", "SERIAL", "SERIAL_ASYNCH", "SLEEP", "SPI", "SPISLAVE", "SPI_ASYNCH", "STDIO_MESSAGES", "USTICKER", "TRNG", "FLASH"],
+        "device_has": ["ANALOGIN", "CRC", "I2C", "I2CSLAVE", "I2C_ASYNCH", "INTERRUPTIN", "LPTICKER", "PORTIN", "PORTINOUT", "PORTOUT", "PWMOUT", "RTC", "SERIAL", "SERIAL_ASYNCH", "SLEEP", "SPI", "SPISLAVE", "SPI_ASYNCH", "STDIO_MESSAGES", "USTICKER", "TRNG", "FLASH"],
         "forced_reset_timeout": 5,
         "config": {
             "hf_clock_src": {
@@ -3627,9 +3643,6 @@
                 "value": "cmuHFRCOFreq_32M0Hz",
                 "macro_name": "HFRCO_FREQUENCY_ENUM"
             }
-        },
-        "overrides": {
-            "network-default-interface-type": "MESH"
         }
     },
     "EFM32GG11B820F2048GL192": {
@@ -3689,9 +3702,6 @@
                 "value": "PG13",
                 "macro_name": "QSPI_FLASH_EN"
             }
-        },
-        "overrides": {
-            "network-default-interface-type": "ETHERNET"
         }
     },
     "WIZWIKI_W7500": {
@@ -4050,7 +4060,7 @@
         "default_toolchain": "GCC_ARM",
         "extra_labels_add": ["STM32F1", "STM32F103C8"],
         "supported_toolchains": ["GCC_ARM"],
-        "device_has_add": ["CAN", "SERIAL_FC", "SERIAL_ASYNCH", "FLASH"],
+        "device_has_add": [],
         "device_has_remove": ["STDIO_MESSAGES", "LPTICKER"]
     },
     "NUMAKER_PFM_NUC472": {
@@ -4330,10 +4340,9 @@
         "release_versions": ["5"],
         "device_name": "nRF52832_xxAA"
     },
-    "MCU_M480": {
+    "NUMAKER_PFM_M487": {
         "core": "Cortex-M4F",
         "default_toolchain": "ARM",
-        "public": false,
         "extra_labels": ["NUVOTON", "M480", "FLASH_CMSIS_ALGO","NUVOTON_EMAC"],
         "is_disk_virtual": true,
         "supported_toolchains": ["ARM", "uARM", "GCC_ARM", "IAR"],
@@ -4367,18 +4376,11 @@
         "macros_add": ["MBEDTLS_CONFIG_HW_SUPPORT", "LPTICKER_DELAY_TICKS=3"],
         "device_has": ["USTICKER", "LPTICKER", "RTC", "ANALOGIN", "I2C", "I2CSLAVE", "I2C_ASYNCH", "INTERRUPTIN", "PORTIN", "PORTINOUT", "PORTOUT", "PWMOUT", "SERIAL", "SERIAL_ASYNCH", "SERIAL_FC", "STDIO_MESSAGES", "SLEEP", "SPI", "SPISLAVE", "SPI_ASYNCH", "TRNG", "FLASH", "CAN", "EMAC"],
         "release_versions": ["5"],
+        "device_name": "M487JIDAE",
         "bootloader_supported": true,
         "overrides": {
             "network-default-interface-type": "ETHERNET"
         }
-    },
-    "NUMAKER_PFM_M487": {
-        "inherits": ["MCU_M480"],
-        "device_name": "M487JIDAE"
-    },
-    "NUMAKER_IOT_M487": {
-        "inherits": ["MCU_M480"],
-        "device_name": "M487JIDAE"
     },
     "TMPM066": {
         "inherits": ["Target"],
